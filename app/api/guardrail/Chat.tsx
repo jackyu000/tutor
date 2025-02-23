@@ -44,11 +44,11 @@ export default function Chat() {
             throw new Error(tutorData.error || `HTTP error! status: ${tutorResponse.status}`);
           }
           
-          if (!tutorData.message) {
-            throw new Error('No message in tutor response');
+          if (!tutorData.reply) {
+            throw new Error('No reply in tutor response');
           }
 
-          addMessage({ role: 'assistant', content: tutorData.message });
+          addMessage({ role: 'assistant', content: tutorData.reply });
         } catch (error) {
           console.error('Error initializing session:', error);
           addMessage({
@@ -114,8 +114,8 @@ export default function Chat() {
         incrementWarning();
         if (guardrailData.severity >= 3) {
           endSession();
-          return;
         }
+        return; // Don't get tutor response if there's a warning
       }
 
       // Get tutor response

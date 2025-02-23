@@ -11,8 +11,15 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    console.log('Guardrail API called');
     const body = await req.json();
-    const { message, timeElapsed, warningCount } = body;
+    const { message, messages, timeElapsed, warningCount } = body;
+    console.log('Guardrail request:', { 
+      message, 
+      messageCount: messages?.length,
+      timeElapsed, 
+      warningCount 
+    });
 
     const systemPrompt = `You are a supportive guardrail system for an AI math tutor.
 
@@ -40,10 +47,13 @@ Example responses that should be considered SAFE:
 "this is hard"
 "???"`;
 
+    console.log('Guardrail system prompt:', systemPrompt);
+
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
+        ...messages?.slice(-3) || [], // Include last 3 messages for context
         { role: "user", content: message }
       ],
       temperature: 0.2,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import useSessionStore from '../store/sessionStore';
 
 export default function Chat() {
@@ -102,13 +102,12 @@ export default function Chat() {
     console.log('Added user message to chat');
 
     try {
-      // Check guardrails with conversation context
+      // Check guardrails
       const guardrailResponse = await fetch('/api/guardrail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: input,
-          messages: messages.slice(-3), // Last 3 messages for context
           timeElapsed: Date.now() - useSessionStore.getState().lastInteractionTime,
           warningCount: useSessionStore.getState().warningCount
         })
@@ -121,7 +120,6 @@ export default function Chat() {
         addMessage({ role: 'system', content: guardrailData.warning });
         incrementWarning();
         if (guardrailData.severity >= 3) {
-          setShowViolationWarning(true);
           endSession();
         }
         return; // Don't get tutor response if there's a warning
@@ -159,6 +157,14 @@ export default function Chat() {
       if (evaluatorData.score !== undefined) {
         updateUnderstandingScore(evaluatorData.score);
         console.log('Updated understanding score');
+        
+        // Add subtle feedback if score is not neutral
+        if (evaluatorData.score !== 0) {
+          addMessage({
+            role: 'system',
+            content: evaluatorData.feedback || (evaluatorData.score > 0 ? '👍 Good thinking!' : '🤔 Let\'s clarify this.')
+          });
+        }
       }
 
     } catch (error) {
@@ -170,37 +176,7 @@ export default function Chat() {
     }
   };
 
-  const [showViolationWarning, setShowViolationWarning] = useState(false);
-
   if (!isActive) {
-    if (showViolationWarning) {
-      return (
-        <div className="w-full max-w-4xl mx-auto p-6 text-center">
-          <div className="bg-red-50 border-2 border-red-500 rounded-lg p-8 mb-6">
-            <h2 className="text-2xl font-bold text-red-600 mb-4">
-              Session Terminated
-            </h2>
-            <p className="text-red-700 mb-4">
-              Your session has been terminated due to multiple policy violations. 
-              This incident will be reported and reviewed.
-            </p>
-            <p className="text-gray-600 text-sm">
-              We expect all users to maintain appropriate and respectful communication.
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setShowViolationWarning(false);
-              startSession();
-            }}
-            className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600 text-lg font-semibold"
-          >
-            Start New Session
-          </button>
-        </div>
-      );
-    }
-
     return (
       <div className="w-full max-w-4xl mx-auto text-center">
         <button

@@ -102,13 +102,12 @@ export default function Chat() {
     console.log('Added user message to chat');
 
     try {
-      // Check guardrails with conversation context
+      // Check guardrails
       const guardrailResponse = await fetch('/api/guardrail', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: input,
-          messages: messages.slice(-3), // Last 3 messages for context
           timeElapsed: Date.now() - useSessionStore.getState().lastInteractionTime,
           warningCount: useSessionStore.getState().warningCount
         })
@@ -159,6 +158,14 @@ export default function Chat() {
       if (evaluatorData.score !== undefined) {
         updateUnderstandingScore(evaluatorData.score);
         console.log('Updated understanding score');
+        
+        // Add subtle feedback if score is not neutral
+        if (evaluatorData.score !== 0) {
+          addMessage({
+            role: 'system',
+            content: evaluatorData.feedback || (evaluatorData.score > 0 ? '👍 Good thinking!' : '🤔 Let\'s clarify this.')
+          });
+        }
       }
 
     } catch (error) {

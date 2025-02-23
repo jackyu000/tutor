@@ -8,6 +8,7 @@ interface SessionState {
   timeRemaining: number;
   warningCount: number;
   lastInteractionTime: number;
+  understandingScore: number;
   messages: Array<{
     role: 'user' | 'assistant' | 'system';
     content: string;
@@ -18,6 +19,7 @@ interface SessionState {
   updateTimeRemaining: (time: number) => void;
   addMessage: (message: { role: 'user' | 'assistant' | 'system'; content: string }) => void;
   incrementWarning: () => void;
+  updateUnderstandingScore: (score: number) => void;
   updateLastInteractionTime: () => void;
 }
 
@@ -27,6 +29,7 @@ const useSessionStore = create<SessionState>((set) => ({
   timeRemaining: 30 * 60, // 30 minutes in seconds
   warningCount: 0,
   lastInteractionTime: Date.now(),
+  understandingScore: 0,
   messages: [],
 
   startSession: () => set({ 
@@ -38,13 +41,10 @@ const useSessionStore = create<SessionState>((set) => ({
   endSession: () => set({ 
     isActive: false, 
     startTime: null,
-    currentStep: 1,
     timeRemaining: 30 * 60,
     understandingScore: 0,
     warningCount: 0
   }),
-
-  setCurrentStep: (step) => set({ currentStep: step }),
   
   updateTimeRemaining: (time) => set({ timeRemaining: time }),
   
@@ -57,9 +57,9 @@ const useSessionStore = create<SessionState>((set) => ({
     warningCount: state.warningCount + 1
   })),
   
-  updateUnderstandingScore: (score) => set({ understandingScore: score }),
-  
-  setSyllabus: (syllabus) => set({ syllabus }),
+  updateUnderstandingScore: (score) => set((state) => ({
+    understandingScore: state.understandingScore + score
+  })),
   
   updateLastInteractionTime: () => set({ lastInteractionTime: Date.now() })
 }));

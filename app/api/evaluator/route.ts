@@ -1,6 +1,5 @@
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
-import { syllabus } from '@/app/data/syllabus';
 
 if (!process.env.OPENAI_API_KEY) {
   throw new Error('Missing OpenAI API Key');
@@ -12,54 +11,66 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    console.log('Evaluator API called');
     const body = await req.json();
-    const { message, currentStep, messages } = body;
+    const { message, messages } = body;
+    console.log('Evaluator request:', { 
+      message, 
+      messageCount: messages?.length
+    });
 
-    const currentStepData = syllabus.steps.find(step => step.id === currentStep);
-    if (!currentStepData) {
-      throw new Error('Invalid step');
-    }
+    const systemPrompt = `You are an AI math tutor's evaluation system that assesses student understanding.
 
-    const systemPrompt = `You are an AI evaluator assessing student understanding of Second-Order Polynomials.
-Your task is to score the student's response on a scale of 1-5, where:
-1: No understanding
-2: Basic understanding with significant gaps
-3: Moderate understanding
-4: Good understanding with minor gaps
-5: Complete understanding
+Analyze the student's response and provide a score from 1-5:
+1: Very confused, needs complete re-explanation
+2: Struggling but showing some basic understanding
+3: Basic understanding with some gaps
+4: Good understanding with minor uncertainties
+5: Excellent understanding of the concept
 
-Current topic: ${currentStepData.title}
-Expected concepts: ${currentStepData.expected_answers.join(', ')}
+IMPORTANT RULES:
+1. Focus on understanding, not grammar or politeness
+2. Short responses like "idk" or "??" indicate confusion (score 1)
+3. Consider context from previous messages
+4. Look for signs of conceptual understanding over perfect answers
 
-Provide your evaluation as a JSON object with:
-- score: number (1-5)
-- reasoning: brief explanation
-- proceed: boolean (whether to move to next step)`;
+Provide your assessment as a JSON object with ONLY a score field:
+{"score": number}
+
+Example scoring:
+"idk" -> {"score": 1}
+"it makes a U shape because the x² term" -> {"score": 4}
+"i think it's related to speed and distance" -> {"score": 3}`;
+
+    console.log('Evaluator system prompt:', systemPrompt);
 
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         { role: "system", content: systemPrompt },
-        ...messages,
+        ...messages?.slice(-3) || [], // Include last 3 messages for context
         { role: "user", content: message }
       ],
       temperature: 0.3,
-      max_tokens: 200,
+      max_tokens: 150,
     });
 
-    const evaluationText = completion.choices[0]?.message?.content || '{}';
-    let evaluation;
+    const assessmentText = completion.choices[0]?.message?.content || '{}';
+    let assessment;
     try {
-      evaluation = JSON.parse(evaluationText);
+      assessment = JSON.parse(assessmentText);
     } catch (e) {
-      evaluation = {
-        score: 3,
-        reasoning: "Could not parse evaluation",
-        proceed: false
+      assessment = {
+        score: 3 // Default to neutral score
       };
     }
 
-    return NextResponse.json(evaluation);
+    // Validate score is within range
+    if (!assessment.score || assessment.score < 1 || assessment.score > 5) {
+      assessment.score = 3; // Default to neutral score if invalid
+    }
+
+    return NextResponse.json(assessment);
   } catch (error) {
     console.error('Error:', error);
     return NextResponse.json(

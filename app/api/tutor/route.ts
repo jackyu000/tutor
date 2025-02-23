@@ -11,6 +11,7 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    console.log('Tutor API called');
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: 'OpenAI API key is not configured' },
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const { message, messages } = await req.json();
-    console.log('Received request:', { message });
+    console.log('Tutor request:', { message, messageCount: messages?.length });
 
     const systemPrompt = `You are a friendly and engaging math tutor specializing in quadratic equations.
 
@@ -83,6 +84,7 @@ Example bad response (TOO LONG):
     });
 
     const reply = completion.choices[0].message.content;
+    console.log('Tutor reply:', reply);
 
     return NextResponse.json({ reply });
   } catch (error) {
