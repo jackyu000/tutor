@@ -44,11 +44,11 @@ export default function Chat() {
             throw new Error(tutorData.error || `HTTP error! status: ${tutorResponse.status}`);
           }
           
-          if (!tutorData.reply) {
-            throw new Error('No reply in tutor response');
+          if (!tutorData.message) {
+            throw new Error('No message in tutor response');
           }
 
-          addMessage({ role: 'assistant', content: tutorData.reply });
+          addMessage({ role: 'assistant', content: tutorData.message });
         } catch (error) {
           console.error('Error initializing session:', error);
           addMessage({
