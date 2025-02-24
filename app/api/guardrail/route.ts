@@ -70,6 +70,7 @@ Example responses that should be considered SAFE:
         warning: null,
         severity: 0
       };
+      console.error(e); // Use 'e' to avoid the error
     }
 
     // Add timeout warning if applicable
