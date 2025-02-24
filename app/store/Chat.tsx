@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react';
 import useSessionStore from 'sessionStore';
+//import useSessionStore from '../store/sessionStore'; // If using relative paths
+
 
 export default function Chat() {
   const {
