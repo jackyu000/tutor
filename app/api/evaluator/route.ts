@@ -63,6 +63,7 @@ Example scoring:
       assessment = {
         score: 3 // Default to neutral score
       };
+      console.error(e); // Use 'e' to avoid the error
     }
 
     // Validate score is within range
